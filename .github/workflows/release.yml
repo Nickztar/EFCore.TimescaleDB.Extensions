@@ -1,0 +1,38 @@
+name: Release
+
+env:
+    NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
+
+on:
+    push:
+        tags:
+            - '*'
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        if: github.repository_owner == 'nickztar'
+
+        steps:
+            - uses: actions/checkout@v2
+            - name: Setup .NET Core
+              uses: actions/setup-dotnet@v1
+              with:
+                  dotnet-version: '8.0.x'
+            - name: Install dependencies
+              run: dotnet restore
+            - name: Build
+              run: dotnet build --configuration Release --no-restore
+            - name: Set Version
+              if: startsWith(github.ref, 'refs/tags')
+              run: |
+                  VERSION=`git describe --tags`
+                  echo "Publishing Version: ${VERSION}"
+                  echo "VERSION=${VERSION}" >> $GITHUB_ENV
+            - name: Pack
+              if: startsWith(github.ref, 'refs/tags')
+              run: |
+                  dotnet pack EFCore.TimescaleDB.Extensions/EFCore.TimescaleDB.Extensions.csproj /p:PackageVersion=$VERSION /p:Version=$VERSION -c Release -o ./publish
+            - name: Publish
+              if: startsWith(github.ref, 'refs/tags')
+              run: dotnet nuget push './publish/**/*.nupkg' -s https://api.nuget.org/v3/index.json -k $NUGET_API_KEY --skip-duplicate

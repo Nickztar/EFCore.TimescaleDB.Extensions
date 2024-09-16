@@ -4,6 +4,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>Extensions for EFCore to help when working with a Timescale database</Description>
+    <Authors>Nicholas Brostrom (Nickztar)</Authors>
+    <Company>Effectsoft AB</Company>
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <AssemblyName>EFCore.TimescaleDB.Extensions</AssemblyName>
+    <PackageId>EFCore.TimescaleDB.Extensions</PackageId>
+    <PackageTags>EFCore;EF;TimescaleDB;postgresql</PackageTags>
+    <PackageProjectUrl>https://github.com/Nickztar/EFCore.TimescaleDB.Extensions</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenceUrl>https://github.com/Nickztar/EFCore.TimescaleDB.Extensions/blob/master/LICENCE</PackageLicenceUrl>
+    <RepositoryType>git</RepositoryType>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,8 +28,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Installation\" />
+   <ItemGroup>
+    <None Include="../README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
