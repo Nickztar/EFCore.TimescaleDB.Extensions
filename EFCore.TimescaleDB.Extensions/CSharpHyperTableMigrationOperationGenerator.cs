@@ -12,26 +12,23 @@ namespace EFCore.TimescaleDB.Extensions
 
         protected override void Generate(MigrationOperation operation, IndentedStringBuilder builder)
         {
-            if (operation == null)
-            {
-                throw new ArgumentNullException(nameof(operation));
-            }
-
-            if (builder == null)
-            {
-                throw new ArgumentNullException(nameof(builder));
-            }
+            ArgumentNullException.ThrowIfNull(operation);
+            ArgumentNullException.ThrowIfNull(builder);
 
             switch (operation)
             {
                 case CreateHyperTableOperation create:
                     Generate(create, builder);
                     break;
-
-                case DropHyperTableOperation drop:
-                    Generate(drop, builder);
+                    
+                case ChangeHyperTableOperation change:
+                    Generate(change, builder);
                     break;
 
+                case DropHyperRetentionOperation drop:
+                    Generate(drop, builder);
+                    break;
+                    
                 default:
                     base.Generate(operation, builder);
                     break;
@@ -40,20 +37,58 @@ namespace EFCore.TimescaleDB.Extensions
 
         private static void Generate(CreateHyperTableOperation operation, IndentedStringBuilder builder)
         {
-            builder.CreateSqlStatement($"SELECT create_hypertable( '\\\"{operation.TableName}\\\"', by_range('{operation.HyperProperty.Name}'));");
+            var interval = operation.ChunkSize is null ? "" : $", INTERVAL '{operation.ChunkSize}'";
+            var hyperTableStatement = $"SELECT create_hypertable( '\\\"{operation.TableName}\\\"', by_range('{operation.HyperProperty.Name}'{interval}));";
+            builder.CreateSqlStatement(
+                hyperTableStatement,
+                isFinalStatement: operation.Retention is null
+            );
             if (operation.Retention is not null)
             {
-                builder.CreateSqlStatement($"SELECT add_retention_policy( '\\\"{operation.TableName}\\\"', INTERVAL '{operation.Retention}');", withBuilder: true);
+                builder.CreateSqlStatement(
+                    $"SELECT add_retention_policy( '\\\"{operation.TableName}\\\"', INTERVAL '{operation.Retention}');", 
+                    withBuilder: true, 
+                    isFinalStatement: true
+                );
+            }
+        }
+        
+        private static void Generate(ChangeHyperTableOperation operation, IndentedStringBuilder builder)
+        {
+            if (operation.Retention != null)
+            {
+                builder.CreateSqlStatement(
+                    $"SELECT add_retention_policy( '\\\"{operation.TableName}\\\"', INTERVAL '{operation.Retention}');", 
+                    isFinalStatement: operation.ChunkSize is null
+                );
+            }
+            if (operation.ChunkSize != null)
+            {
+                builder.CreateSqlStatement(
+                    $"SELECT set_chunk_time_interval('\\\"{operation.TableName}\\\"', INTERVAL '{operation.ChunkSize}');", 
+                    withBuilder: operation.Retention != null,
+                    isFinalStatement: true
+                );
             }
         }
 
-        private static void Generate(DropHyperTableOperation operation, IndentedStringBuilder builder)
+        private static void Generate(DropHyperRetentionOperation operation, IndentedStringBuilder builder)
         {
-            builder.CreateSqlStatement("SELECT 'NOOP' as Noop;");
-            if (operation.Retention is not null)
-            {
-                builder.CreateSqlStatement("SELECT 'NOOP' as Noop;",  description: $"SELECT remove_retention_policy( '\\\"{operation.Name}\\\"');", withBuilder: true);
-            }
+            builder.CreateSqlStatement(
+                $"""
+                DO
+                $do$
+                    BEGIN
+                        IF (select to_regclass('"{operation.Name}"') is not null) THEN
+                            PERFORM remove_retention_policy('"{operation.Name}"', if_exists := true);
+                        ELSE
+                            PERFORM 'NOOP' as Noop;
+                        END IF;
+                    END
+                $do$
+                """,  
+                tripleQuote: true,
+                isFinalStatement: true);
         }
     }
 }

@@ -27,7 +27,7 @@ var host = Host.CreateDefaultBuilder(args)
                    }).Build();
 ```
 
-4. Use the `IsHyperProperty(...)` extension of the `PropertyBuilder` to select the entities which should be audited:
+4. Use the `IsHyperTable(...)` extension of the `EntityTypeBuilder` to select the entities which should be configured:
 
 ```csharp
 
@@ -46,14 +46,14 @@ public class ApplicationDbContext : DbContext
     { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder) 
-        => modelBuilder.Entity<Product>().Property(x => x.Time).IsHyperProperty(retentionInterval: "24 hours"); // Use optional retention interval
+        => modelBuilder.Entity<Product>().IsHyperTable(nameof(Product.Time, retentionInterval: "24 hours", chunkSize: "1 day"); // Use optional intervals
 }
 ```
 
 5. OR: Add support for configuring via the HyperTable attribute/convention by using the `AddHyperTableConfiguration()` extension on `ModelConfigurationBuilder` 
 ```csharp
 [Keyless]
-[HyperTable(nameof(Time), "24 hours")] // Optional retention interval
+[HyperTable(nameof(Time), "24 hours", "1 day")] // Optional intervals
 public class Product 
 {
     public string Name { get; set; }

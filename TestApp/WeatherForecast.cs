@@ -3,7 +3,7 @@ using EFCore.TimescaleDB.Extensions.Attributes;
 using Microsoft.EntityFrameworkCore;
 
 namespace TestApp;
-[HyperTable(nameof(Date), "24 hours")]
+// [HyperTable(nameof(Date), "7 days", "7 days")]
 [Keyless]
 public class WeatherForecast
 {

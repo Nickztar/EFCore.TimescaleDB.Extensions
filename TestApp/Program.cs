@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore.Design;
 
-[assembly: DesignTimeServicesReference("EntityFrameworkExtensions.DesignTimeServices, EntityFrameworkExtensions")]
+[assembly: DesignTimeServicesReference("EFCore.TimescaleDB.Extensions.DesignTimeServices, EFCore.TimescaleDB.Extensions")]
 namespace TestApp;
 public class Program
 {

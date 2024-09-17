@@ -2,6 +2,6 @@
 {
     internal static class Constants
     {
-        public const string HyperProperty = "HyperProperty";
+        public const string HyperTable = "HyperTable";
     }
 }

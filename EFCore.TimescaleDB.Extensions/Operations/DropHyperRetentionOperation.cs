@@ -2,15 +2,15 @@
 
 namespace EFCore.TimescaleDB.Extensions.Operations
 {
-    public class DropHyperTableOperation : MigrationOperation
+    public class DropHyperRetentionOperation : MigrationOperation
     {
-        public DropHyperTableOperation(string name, string? retention)
+        public DropHyperRetentionOperation(string name, string retention)
         {
             Name = name;
             Retention = retention;
         }
 
         public string Name { get; }
-        public string? Retention { get; }
+        public string Retention { get; }
     }
 }

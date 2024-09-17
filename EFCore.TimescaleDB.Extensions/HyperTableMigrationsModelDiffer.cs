@@ -1,4 +1,5 @@
-﻿using EFCore.TimescaleDB.Extensions.Operations;
+﻿using System.Diagnostics;
+using EFCore.TimescaleDB.Extensions.Operations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -35,33 +36,95 @@ namespace EFCore.TimescaleDB.Extensions
             IEnumerable<IEntityType> source,
             IEnumerable<IEntityType> target,
             DiffContext diffContext)
-            => DiffCollection(source, target, diffContext, Diff, Add, Remove, (x, y, diff) => x.Name.Equals(y.Name, StringComparison.CurrentCultureIgnoreCase));
+            => DiffCollection(
+                source, 
+                target, 
+                diffContext, 
+                Diff, 
+                Add, 
+                Remove, 
+                (x, y, diff) => x.Name == y.Name
+            );
 
         private IEnumerable<MigrationOperation> Remove(IEntityType source, DiffContext context)
         {
-            var targetProperty = source.GetProperties().FirstOrDefault(p => p.GetAnnotations().Any(annotation => annotation.Name.Equals(Constants.HyperProperty)));
-            var retentionValue = targetProperty?.GetAnnotation(Constants.HyperProperty)?.Value as string;
-            yield return new DropHyperTableOperation(source.GetTableName(), retentionValue);
+            var configuration = source.GetHyperConfiguration();
+            if (configuration?.RetentionInterval != null)
+                yield return new DropHyperRetentionOperation(source.GetTableName(), configuration.RetentionInterval);
+        }
+        
+        private IEnumerable<MigrationOperation> SoftRemove(IEntityType source, HyperTableExtensions.HyperPropertyChanged changed)
+        {
+            var configuration = source.GetHyperConfiguration();
+            if (changed.HasFlag(HyperTableExtensions.HyperPropertyChanged.Retention) && configuration?.RetentionInterval != null)
+                yield return new DropHyperRetentionOperation(source.GetTableName(), configuration.RetentionInterval);
         }
 
         private IEnumerable<MigrationOperation> Add(IEntityType target, DiffContext context)
         {
-            var targetProperty = target.GetProperties().FirstOrDefault(p => p.GetAnnotations().Any(annotation => annotation.Name.Equals(Constants.HyperProperty)));
-            var retentionValue = targetProperty?.GetAnnotation(Constants.HyperProperty)?.Value as string;
+            var hyperTableConfiguration = target.GetHyperConfiguration();
+            if (hyperTableConfiguration is null) yield break;
+            var property = target.GetProperty(hyperTableConfiguration.PropertyName);
             foreach (var table in target.GetTableMappings())
             {
-                var hyperProperty = table.Table.Columns.FirstOrDefault(x => x.Name == targetProperty?.GetColumnName());
+                var hyperProperty = table.Table.Columns.FirstOrDefault(x => x.Name == property?.GetColumnName());
                 if (hyperProperty is null) continue;
-                yield return new CreateHyperTableOperation(target.GetTableName(), hyperProperty, retentionValue);
+                yield return new CreateHyperTableOperation(
+                    target.GetTableName(), 
+                    hyperProperty, 
+                    hyperTableConfiguration.RetentionInterval, 
+                    hyperTableConfiguration.ChunkSize);
+            }
+        }
+        
+        private IEnumerable<MigrationOperation> SoftAdd(IEntityType target, HyperTableExtensions.HyperPropertyChanged changed)
+        {
+            var hyperTableConfiguration = target.GetHyperConfiguration();
+            if (hyperTableConfiguration is null) yield break;
+            var property = target.GetProperty(hyperTableConfiguration.PropertyName);
+            foreach (var table in target.GetTableMappings())
+            {
+                var hyperProperty = table.Table.Columns.FirstOrDefault(x => x.Name == property?.GetColumnName());
+                if (hyperProperty is null) continue;
+                yield return new ChangeHyperTableOperation
+                {
+                   TableName = target.GetTableName(),
+                   Retention = changed.HasFlag(HyperTableExtensions.HyperPropertyChanged.Retention) ? hyperTableConfiguration.RetentionInterval : null,
+                   ChunkSize = changed.HasFlag(HyperTableExtensions.HyperPropertyChanged.ChunkSize) ? hyperTableConfiguration.ChunkSize : null,
+                };
             }
         }
 
         private IEnumerable<MigrationOperation> Diff(IEntityType source, IEntityType target, DiffContext context)
         {
-            if (source == target)
+            var sourceConfiguration = source.GetHyperConfiguration();
+            var targetConfiguration = target.GetHyperConfiguration();
+            if (sourceConfiguration.IsEqual(targetConfiguration))
             {
                 yield break;
             }
+            
+            if (sourceConfiguration.IsSoftChange(targetConfiguration))
+            {
+                var changed = sourceConfiguration.PropertyChanged(targetConfiguration);
+                if (changed.HasFlag(HyperTableExtensions.HyperPropertyChanged.Retention))
+                {
+                    var softDrops = SoftRemove(source, changed);
+                    foreach (var operation in softDrops)
+                    {
+                        yield return operation;
+                    }
+                }
+                
+                var softAdds = SoftAdd(target, changed);
+                foreach (var operation in softAdds)
+                {
+                    yield return operation;
+                }
+                
+                yield break;
+            }
+            
             var dropOperations = Remove(source, context);
             foreach (var operation in dropOperations)
             {
@@ -83,7 +146,7 @@ namespace EFCore.TimescaleDB.Extensions
             }
 
             var entityTypes = relationalModel.Model.GetEntityTypes();
-            return entityTypes.Where(x => x.GetProperties().Any(p => p.GetAnnotations().Any(annotation => annotation.Name.Equals(Constants.HyperProperty)))).ToList();
+            return entityTypes.Where(x => x.GetAnnotation(Constants.HyperTable).Value != null).ToList();
         }
     }
 }

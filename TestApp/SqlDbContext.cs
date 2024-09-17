@@ -1,4 +1,5 @@
 ﻿using EFCore.TimescaleDB.Extensions;
+using EFCore.TimescaleDB.Extensions.Annotations;
 using Microsoft.EntityFrameworkCore;
 
 namespace TestApp
@@ -9,7 +10,7 @@ namespace TestApp
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<WeatherForecast>();
+            modelBuilder.Entity<WeatherForecast>().IsHyperTable(nameof(WeatherForecast.Date), retentionInterval: "8 days", chunkSize: "1 day");
             base.OnModelCreating(modelBuilder);
         }
 
