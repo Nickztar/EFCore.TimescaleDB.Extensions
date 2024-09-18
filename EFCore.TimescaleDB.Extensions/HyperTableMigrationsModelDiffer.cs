@@ -146,7 +146,7 @@ namespace EFCore.TimescaleDB.Extensions
             }
 
             var entityTypes = relationalModel.Model.GetEntityTypes();
-            return entityTypes.Where(x => x.GetAnnotation(Constants.HyperTable).Value != null).ToList();
+            return entityTypes.Where(x => x.GetAnnotations().Any(a => a.Name == Constants.HyperTable)).ToList();
         }
     }
 }

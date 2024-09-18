@@ -7,6 +7,7 @@ namespace TestApp
     public class SqlDbContext : DbContext
     {
         public DbSet<WeatherForecast> Forecasts { get; set; }
+        public DbSet<RealClass> Inherited { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
