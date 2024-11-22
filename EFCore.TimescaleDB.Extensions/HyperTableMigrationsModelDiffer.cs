@@ -13,11 +13,13 @@ namespace EFCore.TimescaleDB.Extensions
 #pragma warning disable EF1001
     public class HyperTableMigrationsModelDiffer : MigrationsModelDiffer
     {
-        public HyperTableMigrationsModelDiffer(IRelationalTypeMappingSource typeMappingSource,
-            IMigrationsAnnotationProvider migrationsAnnotationProvider,
-            IRowIdentityMapFactory rowIdentityMapFactory,
-            CommandBatchPreparerDependencies commandBatchPreparerDependencies)
-            : base(typeMappingSource, migrationsAnnotationProvider, rowIdentityMapFactory, commandBatchPreparerDependencies)
+        public HyperTableMigrationsModelDiffer(
+        IRelationalTypeMappingSource typeMappingSource,
+        IMigrationsAnnotationProvider migrationsAnnotationProvider,
+        IRelationalAnnotationProvider relationalAnnotationProvider,
+        IRowIdentityMapFactory rowIdentityMapFactory,
+        CommandBatchPreparerDependencies commandBatchPreparerDependencies)
+            : base(typeMappingSource, migrationsAnnotationProvider, relationalAnnotationProvider, rowIdentityMapFactory, commandBatchPreparerDependencies)
         {
         }
 

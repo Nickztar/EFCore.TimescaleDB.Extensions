@@ -1,13 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Description>Extensions for EFCore to help when working with a Timescale database</Description>
     <Authors>Nicholas Brostrom (Nickztar)</Authors>
     <Company>Effectsoft AB</Company>
-    <VersionPrefix>1.0.0</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <AssemblyName>EFCore.TimescaleDB.Extensions</AssemblyName>
     <PackageId>EFCore.TimescaleDB.Extensions</PackageId>
     <PackageTags>EFCore;EF;TimescaleDB;postgresql</PackageTags>
@@ -20,12 +20,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="8.0.8" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.1" />
   </ItemGroup>
 
    <ItemGroup>
